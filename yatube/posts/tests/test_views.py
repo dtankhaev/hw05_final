@@ -217,29 +217,30 @@ class TestPaginator(TestCase):
 
     def test_of_paginator(self):
         """Проверям пагинатор."""
-        number_three = self.number_test - settings.NUMBER_OF_PAGINATOR
-        paginator_dict = {
-            self.client.get(reverse('posts:index')):
-            settings.NUMBER_OF_PAGINATOR,
-            self.client.get(reverse('posts:index') + '?page=2'):
-            number_three,
-            self.client.get(reverse('posts:group_list',
-                            kwargs={'slug': 'test-slug'})):
-            settings.NUMBER_OF_PAGINATOR,
-            self.client.get(reverse('posts:group_list',
-                            kwargs={'slug': 'test-slug'}) + '?page=2'):
-            number_three,
-            self.authorized_client.get(reverse('posts:profile',
-                                       kwargs={'username': 'author'})):
-            settings.NUMBER_OF_PAGINATOR,
-            self.authorized_client.get(reverse('posts:profile',
-                                       kwargs={'username': 'author'})
-                                       + '?page=2'):
-            number_three
-        }
-        for address, ciferka in paginator_dict.items():
-            with self.subTest(address=address):
-                self.assertEqual(len(address.context['page_obj']), ciferka)
+        if self.number_test < settings.NUMBER_OF_PAGINATOR:
+            number_three = self.number_test - settings.NUMBER_OF_PAGINATOR
+            paginator_dict = {
+                self.client.get(reverse('posts:index')):
+                settings.NUMBER_OF_PAGINATOR,
+                self.client.get(reverse('posts:index') + '?page=2'):
+                number_three,
+                self.client.get(reverse('posts:group_list',
+                                kwargs={'slug': 'test-slug'})):
+                settings.NUMBER_OF_PAGINATOR,
+                self.client.get(reverse('posts:group_list',
+                                kwargs={'slug': 'test-slug'}) + '?page=2'):
+                number_three,
+                self.authorized_client.get(reverse('posts:profile',
+                                           kwargs={'username': 'author'})):
+                settings.NUMBER_OF_PAGINATOR,
+                self.authorized_client.get(reverse('posts:profile',
+                                           kwargs={'username': 'author'})
+                                           + '?page=2'):
+                number_three
+            }
+            for address, ciferka in paginator_dict.items():
+                with self.subTest(address=address):
+                    self.assertEqual(len(address.context['page_obj']), ciferka)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)

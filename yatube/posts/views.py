@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
-from .models import Comment, Follow, Group, Post
+from .models import Follow, Group, Post
 from .utils import new_paginator
 
 User = get_user_model()
@@ -36,14 +36,10 @@ def profile(request, username):
     posts = author.posts.all()
     count_posts = posts.count()
     page_obj = new_paginator(posts, request.GET.get('page'))
-    if request.user.is_authenticated:
-        if Follow.objects.filter(user=request.user, author=author).exists():
-            is_following = True
-        else:
-            is_following = False
-    else:
-        is_following = False
-
+    is_following = False
+    if request.user.is_authenticated and Follow.objects.filter(
+            user=request.user, author=author).exists():
+        is_following = True
     context = {
         'author': author,
         'count_posts': count_posts,
@@ -57,7 +53,7 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     count_posts = Post.objects.filter(author_id=post.author.id).count()
     form = CommentForm(request.POST or None)
-    comments = Comment.objects.filter(post=post)
+    comments = post.comments.all()
     context = {
         'post': post,
         'count_posts': count_posts,

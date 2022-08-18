@@ -14,6 +14,7 @@ User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class TestForm(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -28,6 +29,11 @@ class TestForm(TestCase):
             author=cls.user,
             text='Тестовый текст',
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.guest_client = Client()
@@ -87,27 +93,6 @@ class TestForm(TestCase):
             reverse('posts:add_comment', kwargs={'post_id': self.post.id})
         )
         self.assertEqual(response.status_code, 302)
-
-
-@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
-class TestFormImage(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.user = User.objects.create_user(username='author')
-        cls.post = Post.objects.create(
-            author=cls.user,
-            text='Тестовый текст',
-        )
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
-
-    def setUp(self):
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
 
     def test_create_post(self):
         """Валидная форма создает запись в Post."""

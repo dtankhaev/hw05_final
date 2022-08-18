@@ -83,7 +83,7 @@ class PostURLTestPages(TestCase):
         self.assertEqual(post_group, PostURLTestPages.group)
 
     def test_group_list(self):
-        """Отфильтрованных по группе."""
+        """Список постов, отфильтрованных по группе."""
         response = self.author_client.get(
             reverse('posts:group_list', kwargs={'slug': 'test-slug'}))
 
@@ -98,7 +98,7 @@ class PostURLTestPages(TestCase):
         self.assertEqual(response.context.get('group').slug, 'test-slug')
 
     def test_profile(self):
-        """отфильтрованных по пользователю."""
+        """Список постов, отфильтрованных по пользователю."""
         response = self.author_client.get(
             reverse(
                 'posts:profile',
@@ -175,18 +175,21 @@ class PostURLTestPages(TestCase):
                             self.group_two)
 
     def test_cache(self):
-        """Проверяем работу кеша"""
+        """Проверяем работу кэша"""
         response = self.author_client.get(
             reverse('posts:index')
-        )
-        resp_1 = response.content
+        ).content
         post_deleted = Post.objects.get(id=self.post.id)
         post_deleted.delete()
         response_anoth = self.author_client.get(
             reverse('posts:index')
-        )
-        resp_2 = response_anoth.content
-        self.assertTrue(resp_1 == resp_2)
+        ).content
+        self.assertTrue(response == response_anoth)
+        cache.clear()
+        response_3 = self.author_client.get(
+            reverse('posts:index')
+        ).context
+        self.assertTrue(response != response_3)
 
 
 class TestPaginator(TestCase):
@@ -222,20 +225,20 @@ class TestPaginator(TestCase):
             paginator_dict = {
                 self.client.get(reverse('posts:index')):
                 settings.NUMBER_OF_PAGINATOR,
-                self.client.get(reverse('posts:index') + '?page=2'):
+                self.client.get(reverse('posts:index') + {"page": 2}):
                 number_three,
                 self.client.get(reverse('posts:group_list',
                                 kwargs={'slug': 'test-slug'})):
                 settings.NUMBER_OF_PAGINATOR,
                 self.client.get(reverse('posts:group_list',
-                                kwargs={'slug': 'test-slug'}) + '?page=2'):
+                                kwargs={'slug': 'test-slug'}) + {"page": 2}):
                 number_three,
                 self.authorized_client.get(reverse('posts:profile',
                                            kwargs={'username': 'author'})):
                 settings.NUMBER_OF_PAGINATOR,
                 self.authorized_client.get(reverse('posts:profile',
                                            kwargs={'username': 'author'})
-                                           + '?page=2'):
+                                           + {"page": 2}):
                 number_three
             }
             for address, ciferka in paginator_dict.items():
@@ -310,6 +313,14 @@ class TestImageContext(TestCase):
 
 
 class TestFollowAndUnfollow(TestCase):
+    # @classmethod
+    # def setUpClass(cls):
+    #     cls.user = User.objects.create_user(username='author')
+    #     cls.post = Post.objects.create(
+    #         text='Test text',
+    #         author=cls.user
+    #     )
+
     def setUp(self):
         self.author = User.objects.create(username='author')
         self.user = User.objects.create(username='Larina')
@@ -335,6 +346,10 @@ class TestFollowAndUnfollow(TestCase):
 
     def test__user_unfollow_author(self):
         """Проверяем отписки."""
+        self.authorized_client.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.author})
+        )
         response = self.authorized_client.get(
             reverse('posts:profile_unfollow',
                     kwargs={'username': self.author})
@@ -347,8 +362,10 @@ class TestFollowAndUnfollow(TestCase):
             ).exists()
         )
 
-    def test_new_post_see_only_follow(self):
-        """Запись есть."""
+    def test_new_post_show(self):
+        """Новая запись пользователя появляется в ленте тех,
+        кто на него подписан.
+        """
         Follow.objects.create(
             user=self.user,
             author=self.author,
@@ -362,6 +379,14 @@ class TestFollowAndUnfollow(TestCase):
         ).context['page_obj']
         self.assertIn(post, response_auth)
 
+    def test_new_post_not_show(self):
+        """Новая запись не появляется в ленте тех,
+        кто не подписан.
+        """
+        post = Post.objects.create(
+            text='Test text',
+            author=self.author
+        )
         response_not_auth = self.authorized_client_not_follow.get(
             reverse('posts:follow_index')
         ).context['page_obj']

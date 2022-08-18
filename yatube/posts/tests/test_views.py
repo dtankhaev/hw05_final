@@ -202,14 +202,14 @@ class TestPaginator(TestCase):
             slug='test-slug',
             description='Тестовое описание',
         )
-        cls.number_test = 13
+        cls.number_test = 13 - settings.NUMBER_OF_PAGINATOR
         objs = [
             Post(
                 text=f'Тестовая запись {i}',
                 author=cls.user,
                 group=cls.group
             )
-            for i in range(TestPaginator.number_test)
+            for i in range(13)
         ]
         Post.objects.bulk_create(objs)
 
@@ -220,30 +220,28 @@ class TestPaginator(TestCase):
 
     def test_of_paginator(self):
         """Проверям пагинатор."""
-        if self.number_test < settings.NUMBER_OF_PAGINATOR:
-            number_three = self.number_test - settings.NUMBER_OF_PAGINATOR
-            paginator_dict = {
-                self.client.get(reverse('posts:index')):
-                settings.NUMBER_OF_PAGINATOR,
-                self.client.get(reverse('posts:index') + {"page": 2}):
-                number_three,
-                self.client.get(reverse('posts:group_list',
-                                kwargs={'slug': 'test-slug'})):
-                settings.NUMBER_OF_PAGINATOR,
-                self.client.get(reverse('posts:group_list',
-                                kwargs={'slug': 'test-slug'}) + {"page": 2}):
-                number_three,
-                self.authorized_client.get(reverse('posts:profile',
-                                           kwargs={'username': 'author'})):
-                settings.NUMBER_OF_PAGINATOR,
-                self.authorized_client.get(reverse('posts:profile',
-                                           kwargs={'username': 'author'})
-                                           + {"page": 2}):
-                number_three
-            }
-            for address, ciferka in paginator_dict.items():
-                with self.subTest(address=address):
-                    self.assertEqual(len(address.context['page_obj']), ciferka)
+        paginator_dict = {
+            self.client.get(reverse('posts:index')):
+            settings.NUMBER_OF_PAGINATOR,
+            self.client.get(reverse('posts:index'), {"page": 2}):
+            self.number_test,
+            self.client.get(reverse('posts:group_list',
+                            kwargs={'slug': 'test-slug'})):
+            settings.NUMBER_OF_PAGINATOR,
+            self.client.get(reverse('posts:group_list',
+                            kwargs={'slug': 'test-slug'}), {"page": 2}):
+            self.number_test,
+            self.authorized_client.get(reverse('posts:profile',
+                                       kwargs={'username': 'author'})):
+            settings.NUMBER_OF_PAGINATOR,
+            self.authorized_client.get(reverse('posts:profile',
+                                       kwargs={'username': 'author'}),
+                                       {"page": 2}):
+            self.number_test
+        }
+        for address, ciferka in paginator_dict.items():
+            with self.subTest(address=address):
+                self.assertEqual(len(address.context['page_obj']), ciferka)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -313,22 +311,11 @@ class TestImageContext(TestCase):
 
 
 class TestFollowAndUnfollow(TestCase):
-    # @classmethod
-    # def setUpClass(cls):
-    #     cls.user = User.objects.create_user(username='author')
-    #     cls.post = Post.objects.create(
-    #         text='Test text',
-    #         author=cls.user
-    #     )
-
     def setUp(self):
         self.author = User.objects.create(username='author')
         self.user = User.objects.create(username='Larina')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
-        self.user_not_follow = User.objects.create(username='Vitalina')
-        self.authorized_client_not_follow = Client()
-        self.authorized_client_not_follow.force_login(self.user_not_follow)
 
     def test__user_follow_author(self):
         """Проверяем подписки."""
@@ -346,9 +333,9 @@ class TestFollowAndUnfollow(TestCase):
 
     def test__user_unfollow_author(self):
         """Проверяем отписки."""
-        self.authorized_client.get(
-            reverse('posts:profile_follow',
-                    kwargs={'username': self.author})
+        Follow.objects.create(
+            user=self.user,
+            author=self.author,
         )
         response = self.authorized_client.get(
             reverse('posts:profile_unfollow',
@@ -387,7 +374,7 @@ class TestFollowAndUnfollow(TestCase):
             text='Test text',
             author=self.author
         )
-        response_not_auth = self.authorized_client_not_follow.get(
+        response_not_auth = self.authorized_client.get(
             reverse('posts:follow_index')
         ).context['page_obj']
         self.assertNotIn(post, response_not_auth)

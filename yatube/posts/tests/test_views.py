@@ -202,14 +202,15 @@ class TestPaginator(TestCase):
             slug='test-slug',
             description='Тестовое описание',
         )
-        cls.number_test = 13 - settings.NUMBER_OF_PAGINATOR
+        cls.number_page = 3
+        cls.number_test = settings.NUMBER_OF_PAGINATOR + cls.number_page
         objs = [
             Post(
                 text=f'Тестовая запись {i}',
                 author=cls.user,
                 group=cls.group
             )
-            for i in range(13)
+            for i in range(cls.number_test)
         ]
         Post.objects.bulk_create(objs)
 
@@ -224,24 +225,24 @@ class TestPaginator(TestCase):
             self.client.get(reverse('posts:index')):
             settings.NUMBER_OF_PAGINATOR,
             self.client.get(reverse('posts:index'), {"page": 2}):
-            self.number_test,
+            self.number_page,
             self.client.get(reverse('posts:group_list',
                             kwargs={'slug': 'test-slug'})):
             settings.NUMBER_OF_PAGINATOR,
             self.client.get(reverse('posts:group_list',
                             kwargs={'slug': 'test-slug'}), {"page": 2}):
-            self.number_test,
+            self.number_page,
             self.authorized_client.get(reverse('posts:profile',
                                        kwargs={'username': 'author'})):
             settings.NUMBER_OF_PAGINATOR,
             self.authorized_client.get(reverse('posts:profile',
                                        kwargs={'username': 'author'}),
                                        {"page": 2}):
-            self.number_test
+            self.number_page
         }
-        for address, ciferka in paginator_dict.items():
+        for address, number in paginator_dict.items():
             with self.subTest(address=address):
-                self.assertEqual(len(address.context['page_obj']), ciferka)
+                self.assertEqual(len(address.context['page_obj']), number)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)

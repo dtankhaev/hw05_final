@@ -15,6 +15,8 @@ SECRET_KEY = 'django-insecure-4%6rnp@-wsx1+hhkf3ymak%hk$hhedjd09t+t_&(qlf#98h#c^
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    'www.dtankhaev.pythonanywhere.com',
+    'dtankhaev.pythonanywhere.com',
     'localhost',
     '127.0.0.1',
     '[::1]',
@@ -31,11 +33,13 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    # Приложение staticfiles необходимо для работы приложения DjDT
     'django.contrib.staticfiles',
     'users.apps.UsersConfig',
     'core.apps.CoreConfig',
     'about.apps.AboutConfig',
     'sorl.thumbnail',
+    'debug_toolbar'
 ]
 
 MIDDLEWARE = [
@@ -46,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'yatube.urls'
@@ -145,3 +150,8 @@ CACHES = {
 }
 
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+
+# Добавьте IP адреса, при обращении с которых будет доступен DjDT
+INTERNAL_IPS = [
+    '127.0.0.1',
+]

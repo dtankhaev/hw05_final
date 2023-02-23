@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 token = os.getenv('TOKEN')
-SECRET_KEY = token
+SECRET_KEY = 'django-insecure-4%6rnp@-wsx1+hhkf3ymak%hk$hhedjd09t+t_&(qlf#98h#c^'
 
 DEBUG = True
 

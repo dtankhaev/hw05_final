@@ -10,7 +10,7 @@ from .utils import new_paginator
 User = get_user_model()
 
 
-@cache_page(20)
+# @cache_page(20)
 def index(request):
     post_list = Post.objects.select_related('author').all()
     page_obj = new_paginator(post_list, request.GET.get('page'))

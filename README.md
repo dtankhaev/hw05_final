@@ -1,4 +1,4 @@
-# **hw05_final**
+# **The blog**
 ### **Description**
 Social network of bloggers.
 
